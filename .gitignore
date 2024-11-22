@@ -1,0 +1,23 @@
+# Ignore virtual environment
+venv/
+
+# Ignore database file (development only)
+db.sqlite3
+
+# Ignore compiled Python files
+*.pyc
+
+# Ignore cache files
+__pycache__/
+
+# Ignore local development configurations
+.env
+myenv/
+
+# Ignore coverage reports
+.coverage
+
+# Ignore test database (if applicable)
+test_db.sqlite3
+
+base/migrations
