@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-t*v6&s3ivg56&e+&6w+k=rg987*0n4fk5asw6lj1b=bcj4b=uu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'metro.adgigpay.com.ng','https://metro.adgigpay.com.ng/', 'backend.adgigpay.com.ng','https://www.metro.adgigpay.com.ng/', 'www.metro.adgigpay.com.ng','.ngrok-free.app']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'sokotobackend.adgigpay.com.ng','https://sokotobackend.adgigpay.com.ng/', 'sokotobackend.adgigpay.com.ng','https://www.sokotobackend.adgigpay.com.ng/', 'www.sokotobackend.adgigpay.com.ng','.ngrok-free.app']
 
 
 # Application definition
