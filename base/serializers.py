@@ -72,3 +72,8 @@ class TeamsSerializer(serializers.ModelSerializer):
         model = Teams
         fields = ['id', 'name', 'image', 'position']
         read_only_fields = ['id']
+
+class GallerySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gallery
+        fields = '__all__'

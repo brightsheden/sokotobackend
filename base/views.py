@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
-from base.models import Blog,User
-from base.serializers import BlogSerializer, UserSerializerWithToken, UserSerializer,TeamsSerializer
+from base.models import Blog,User,Gallery
+from base.serializers import BlogSerializer, UserSerializerWithToken, UserSerializer,TeamsSerializer, GallerySerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.hashers import check_password, make_password
@@ -237,3 +237,59 @@ def get_team_by_id(request,pk):
     return Response(serializer.data)
 
 
+# @api_view(["POSt"])
+# @permission_classes([IsAuthenticated])
+# def add_image(request):
+#     data = request.data
+#     serializer = GallerySerializer(data=data, patial=True)
+#     if serializer.is_valid:
+#         serializer.save()
+
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def add_image(request):
+    data = request.data
+    image = data.get("image")
+    description = data.get("description")
+    upload = Gallery.objects.create(
+        image=image,
+        description=description
+    )
+    serializer = GallerySerializer(upload, many=False)
+    return Response(serializer.data)
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def update_image(request,id):
+    data = request.data
+    gallery = Gallery.objects.get(id=id)
+    gallery.image = data.get("image")
+    gallery.description = data.get("description")
+    gallery.save()
+    
+    serializer = GallerySerializer(gallery, many=False)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_images(request):
+    images = Gallery.objects.all()
+    serializer = GallerySerializer(images, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_image(request,id):
+    image = Gallery.objects.get(id=id)
+    serializer = GallerySerializer(image, many=False)
+    return Response(serializer.data)
+
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_image(request,id):
+    gallery = Gallery.objects.get(id=id)
+    gallery.delete()
+    return Response({"message":"Gallery deleted"})

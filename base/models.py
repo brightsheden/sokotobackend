@@ -58,3 +58,10 @@ class Teams(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+
+class Gallery(models.Model):
+    image = models.ImageField(upload_to='gallery/', blank=True, null=True)
+    description= models.CharField(max_length=255, blank=True, null=True, default="Sokoto Acresal")
+    upload_at = models.DateTimeField(auto_now_add=True)
