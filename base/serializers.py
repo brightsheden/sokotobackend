@@ -77,3 +77,40 @@ class GallerySerializer(serializers.ModelSerializer):
     class Meta:
         model = Gallery
         fields = '__all__'
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    uploaded_by_name = serializers.SerializerMethodField(read_only=True)
+    file_url = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Document
+        fields = [
+            'id',
+            'title',
+            'description',
+            'file',
+            'file_url',
+            'category',
+            'file_type',
+            'file_size',
+            'download_count',
+            'uploaded_by',
+            'uploaded_by_name',
+            'uploaded_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'download_count', 'uploaded_at', 'updated_at', 'uploaded_by', 'uploaded_by_name', 'file_url']
+
+    def get_uploaded_by_name(self, obj):
+        if obj.uploaded_by:
+            return obj.uploaded_by.username or obj.uploaded_by.email
+        return 'Admin'
+
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None

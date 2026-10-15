@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-t*v6&s3ivg56&e+&6w+k=rg987*0n4fk5asw6lj1b=bcj4b=uu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'sokotobackend.adgigpay.com.ng','https://sokotobackend.adgigpay.com.ng/', 'sokotobackend.adgigpay.com.ng','https://www.sokotobackend.adgigpay.com.ng/', 'www.sokotobackend.adgigpay.com.ng','.ngrok-free.app']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', 'sokotobackend.adgigpay.com.ng','https://sokotobackend.adgigpay.com.ng/', 'sokotobackend.adgigpay.com.ng','https://www.sokotobackend.adgigpay.com.ng/', 'www.sokotobackend.adgigpay.com.ng','.ngrok-free.app']
 
 
 # Application definition
@@ -179,9 +179,10 @@ STATIC_ROOT = BASE_DIR / 'staticfile'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
-    BASE_DIR / 'frontend/dist/assets',
-    os.path.join(BASE_DIR, 'frontend/dist/assets')
 ]
+if (BASE_DIR.parent / 'frontend/dist/assets').exists():
+    STATICFILES_DIRS.append(BASE_DIR.parent / 'frontend/dist/assets')
+
 
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

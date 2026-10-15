@@ -4,8 +4,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
-from base.models import Blog,User,Gallery
-from base.serializers import BlogSerializer, UserSerializerWithToken, UserSerializer,TeamsSerializer, GallerySerializer
+from base.models import Blog, User, Gallery, Document
+from base.serializers import BlogSerializer, UserSerializerWithToken, UserSerializer, TeamsSerializer, GallerySerializer, DocumentSerializer
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Q
+from django.http import FileResponse
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.hashers import check_password, make_password
@@ -293,3 +296,154 @@ def delete_image(request,id):
     gallery = Gallery.objects.get(id=id)
     gallery.delete()
     return Response({"message":"Gallery deleted"})
+
+
+class DocumentPagination(PageNumberPagination):
+    page_size = 9
+    page_size_query_param = 'page_size'
+    max_page_size = 50
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'current_page': self.page.number,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data
+        })
+
+
+@api_view(['GET'])
+def get_documents(request):
+    search = request.GET.get('search', '').strip()
+    category = request.GET.get('category', '').strip()
+    
+    documents = Document.objects.all().order_by('-uploaded_at')
+    
+    if search:
+        documents = documents.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search) |
+            Q(file_type__icontains=search)
+        )
+    if category and category.lower() != 'all':
+        documents = documents.filter(category__iexact=category)
+        
+    paginator = DocumentPagination()
+    page = paginator.paginate_queryset(documents, request)
+    if page is not None:
+        serializer = DocumentSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+        
+    serializer = DocumentSerializer(documents, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def get_document(request, id):
+    try:
+        document = Document.objects.get(id=id)
+        serializer = DocumentSerializer(document, many=False, context={'request': request})
+        return Response(serializer.data)
+    except Document.DoesNotExist:
+        return Response({'detail': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def create_document(request):
+    data = request.data
+    file = request.FILES.get('file')
+    if not file:
+        return Response({'detail': 'A document file is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    title = data.get('title')
+    if not title:
+        return Response({'detail': 'Title is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    document = Document.objects.create(
+        title=title,
+        description=data.get('description', ''),
+        category=data.get('category', 'General') or 'General',
+        file=file,
+        uploaded_by=request.user if request.user.is_authenticated else None
+    )
+    serializer = DocumentSerializer(document, many=False, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def update_document(request, id):
+    try:
+        document = Document.objects.get(id=id)
+    except Document.DoesNotExist:
+        return Response({'detail': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    data = request.data
+    if 'title' in data:
+        document.title = data.get('title')
+    if 'description' in data:
+        document.description = data.get('description')
+    if 'category' in data:
+        document.category = data.get('category') or 'General'
+    if 'file' in request.FILES:
+        document.file = request.FILES['file']
+        
+    document.save()
+    serializer = DocumentSerializer(document, many=False, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_document(request, id):
+    try:
+        document = Document.objects.get(id=id)
+    except Document.DoesNotExist:
+        return Response({'detail': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if document.file:
+        try:
+            document.file.delete(save=False)
+        except Exception:
+            pass
+    document.delete()
+    return Response({'message': 'Document deleted successfully'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def download_document(request, id):
+    try:
+        document = Document.objects.get(id=id)
+    except Document.DoesNotExist:
+        return Response({'detail': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    document.download_count += 1
+    document.save(update_fields=['download_count'])
+    
+    import os
+    if document.file:
+        try:
+            if os.path.exists(document.file.path):
+                response = FileResponse(
+                    open(document.file.path, 'rb'),
+                    as_attachment=True,
+                    filename=os.path.basename(document.file.name)
+                )
+                return response
+        except Exception:
+            pass
+        from django.shortcuts import redirect
+        return redirect(document.file.url)
+    return Response({'detail': 'File not found on disk'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def get_document_categories(request):
+    categories = Document.objects.values_list('category', flat=True).distinct()
+    unique_categories = sorted(list(set(c.strip() for c in categories if c and c.strip())))
+    return Response(unique_categories)

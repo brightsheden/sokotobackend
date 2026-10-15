@@ -65,3 +65,38 @@ class Gallery(models.Model):
     image = models.ImageField(upload_to='gallery/', blank=True, null=True)
     description= models.CharField(max_length=255, blank=True, null=True, default="Sokoto Acresal")
     upload_at = models.DateTimeField(auto_now_add=True)
+
+
+class Document(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    file = models.FileField(upload_to='documents/')
+    category = models.CharField(max_length=100, blank=True, null=True, default='General')
+    file_type = models.CharField(max_length=50, blank=True, null=True)
+    file_size = models.CharField(max_length=50, blank=True, null=True)
+    download_count = models.PositiveIntegerField(default=0)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if self.file and hasattr(self.file, 'size'):
+            size = self.file.size
+            if size < 1024:
+                self.file_size = f"{size} B"
+            elif size < 1024 * 1024:
+                self.file_size = f"{size / 1024:.1f} KB"
+            else:
+                self.file_size = f"{size / (1024 * 1024):.1f} MB"
+            
+            import os
+            ext = os.path.splitext(self.file.name)[1].lower().replace('.', '')
+            self.file_type = ext.upper() if ext else 'DOC'
+
+        super(Document, self).save(*args, **kwargs)

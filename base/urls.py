@@ -15,5 +15,15 @@ urlpatterns = [
     path('gallery/update_image/<int:id>/', update_image, name='update_image'),
     path('gallery/get_images/', get_images, name='get_images'),
     path('gallery/delete_image/<int:id>/', delete_image, name='delete_image'),
-    path('gallery/get_image/<str:id>/', get_image)
+    path('gallery/get_image/<str:id>/', get_image),
+
+    # Documents
+    path('documents/', get_documents, name='get_documents'),
+    path('documents/categories/', get_document_categories, name='get_document_categories'),
+    path('documents/<int:id>/', get_document, name='get_document'),
+    path('documents/create/', create_document, name='create_document'),
+    path('documents/update/<int:id>/', update_document, name='update_document'),
+    path('documents/delete/<int:id>/', delete_document, name='delete_document'),
+    path('documents/<int:id>/download/', download_document, name='download_document'),
+
 ]
